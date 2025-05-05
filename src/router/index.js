@@ -5,6 +5,9 @@ import Login from '@/views/Login.vue';
 import Registration from '@/views/Registration.vue';
 import Profile from '@/views/Profile.vue';
 import CreateLocation from '@/views/CreateLocation.vue';
+import Approve from '@/views/Approve.vue';
+import MyPublications from '@/views/MyPublications.vue';
+import EditLocation from '@/views/EditLocation.vue';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const routes = [
@@ -39,6 +42,25 @@ const routes = [
     name: 'create-location',
     component: CreateLocation,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/approve',
+    name: 'approve', 
+    component: Approve,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-publications',
+    name: 'my-publications',
+    component: MyPublications,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/edit-location/:id',
+    name: 'edit-location',
+    component: EditLocation,
+    meta: { requiresAuth: true },
+    props: true
   },
 ];
 

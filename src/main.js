@@ -4,6 +4,7 @@ import router from './router';
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 createApp(App).use(router).mount('#app');
 

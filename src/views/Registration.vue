@@ -96,6 +96,8 @@
             profilePicture: "https://firebasestorage.googleapis.com/v0/b/kursova-5374b.appspot.com/o/bach%2F491004389_596021710156389_1039114513883964411_n.jpg?alt=media&token=63353374-7c0a-4060-b208-1310f3f67bce",
             createdAt: new Date(),
             uid: user.uid,
+            role: "user",
+            status: "active",
           });
   
           console.log("Реєстрація та запис в Firestore успішні!");

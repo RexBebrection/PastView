@@ -55,8 +55,19 @@
       </div>
       <div class="b-c-det">
         <p class="p-t">Створіть опис</p>
-        <input v-model="locationName" type="text" placeholder="Введіть назву" class="det-inp" required />
-        <input v-model="locationDescription" type="text" placeholder="Введіть опис" class="det-inp" />
+        <input
+          v-model="locationName"
+          type="text"
+          placeholder="Введіть назву"
+          class="det-inp"
+          required
+        />
+        <input
+          v-model="locationDescription"
+          type="text"
+          placeholder="Введіть опис"
+          class="det-inp"
+        />
       </div>
       <div class="location-buttons">
         <button @click="saveLocation" class="c-button b">Зберегти</button>
@@ -69,7 +80,14 @@
 <script>
 import mapboxgl from "mapbox-gl";
 import Navbar from "@/components/Navbar.vue";
-import { getFirestore, collection, addDoc, Timestamp } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  Timestamp,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
@@ -190,22 +208,39 @@ export default {
       this.dragStyle = {};
     },
     async saveLocation() {
-      if (!this.locationName || !this.searchQuery || !this.imageFile || !this.locationCoords) {
+      if (
+        !this.locationName ||
+        !this.searchQuery ||
+        !this.imageFile ||
+        !this.locationCoords
+      ) {
         alert("Будь ласка, заповніть всі обов'язкові поля!");
         return;
       }
 
-      // Upload the image first
       const storage = getStorage();
-      const storageRef = ref(storage, `locations/${Date.now()}_${this.imageFile.name}`);
+      const storageRef = ref(
+        storage,
+        `locations/${Date.now()}_${this.imageFile.name}`
+      );
+
       try {
         const snapshot = await uploadBytes(storageRef, this.imageFile);
         const imageUrl = await getDownloadURL(snapshot.ref);
 
-        // Save location data in Firestore
         const db = getFirestore();
         const auth = getAuth();
         const user = auth.currentUser;
+
+        let username = "Без імені";
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          username = userDocSnap.data().username || username;
+        }
+
+
         const locationRef = collection(db, "locations");
         await addDoc(locationRef, {
           name: this.locationName,
@@ -213,9 +248,9 @@ export default {
           address: this.searchQuery,
           coordinates: this.locationCoords,
           userUid: user.uid,
-          username: user.displayName,
+          username: username,
           imageUrl: imageUrl,
-          isPosted: false,
+          status: "pending",
           createdAt: Timestamp.fromDate(new Date()),
         });
 

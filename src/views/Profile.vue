@@ -4,11 +4,24 @@
     <div class="profile-content">
       <div class="profile-island" v-if="userData">
         <div class="profile-info">
-          <img
-            :src="userData.profilePicture"
-            alt="Profile"
-            class="profile-image"
-          />
+          <div class="profile-image-wrapper" @click="triggerFileInput">
+            <img
+              :src="userData.profilePicture"
+              alt="Profile"
+              class="profile-image"
+            />
+            <div class="overlay">
+              <span>Змінити фото</span>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              ref="fileInput"
+              @change="handleFileChange"
+              class="hidden-file-input"
+            />
+          </div>
+
           <div class="profile-right">
             <div class="profile-det">
               <div class="profile-usr">
@@ -17,28 +30,83 @@
                   Профіль створено {{ formatDate(userData.createdAt) }}
                 </p>
               </div>
-              <div v-if="editingDescription">
-                <textarea
-                  v-model="newDescription"
-                  class="profile-description-textarea"
-                  rows="4"
-                  placeholder="Редагувати опис..."
-                ></textarea>
-                <div class="buttons-row-e">
-                  <button @click="saveDescription" class="br">Зберегти</button>
-                  <button @click="cancelEdit" class="br">Скасувати</button>
+              <div v-if="userData.role !== 'moderator'">
+                <div v-if="editingDescription">
+                  <textarea
+                    v-model="newDescription"
+                    class="profile-description-textarea"
+                    rows="4"
+                    placeholder="Редагувати опис..."
+                  ></textarea>
+                  <div class="buttons-row-e">
+                    <button @click="saveDescription" class="br">
+                      Зберегти
+                    </button>
+                    <button @click="cancelEdit" class="br">Скасувати</button>
+                  </div>
                 </div>
-              </div>
-              <div v-else>
-                <p class="profile-description">
-                  {{ userData.description || "Цей користувач ще не додав опис." }}
-                </p>
+                <div v-else>
+                  <p class="profile-description">
+                    {{
+                      userData.description || "Цей користувач ще не додав опис."
+                    }}
+                  </p>
+                </div>
               </div>
             </div>
             <div class="buttons-row" v-if="!editingDescription">
-              <button @click="editDescription" class="description-edit br">Редагувати опис</button>
+              <button
+                v-if="userData.role !== 'moderator'"
+                @click="editDescription"
+                class="description-edit br"
+              >
+                Редагувати опис
+              </button>
               <button @click="logout" class="logout br">Вийти з профілю</button>
-              <button @click="deleteAccount" class="delete br">Видалити профіль</button>
+              <button @click="deleteAccount" class="delete br">
+                Видалити профіль
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-if="userData.role == 'moderator'" class="blocked-users">
+          <p class="blocked-title">Заблоковані користувачі</p>
+          <div class="blocked-list-scroll">
+            <div
+              v-for="blocked in blockedUsers"
+              :key="blocked.id"
+              class="blocked-card"
+            >
+              <img
+                :src="blocked.profilePicture"
+                alt="Blocked Profile"
+                class="blocked-image"
+              />
+              <div class="blocked-info">
+                <p class="blocked-name">@{{ blocked.username }}</p>
+                <p class="blocked-date">
+                  Профіль заблоковано {{ formatDate(blocked.blockedAt) }}
+                </p>
+              </div>
+              <button class="br" @click="unblockUser(blocked.id)">
+                Відновити
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-if="userData.role == 'moderator'" class="locations-gallery">
+          <p class="blocked-title">Забраковані світлини</p>
+          <div class="locations-scroll">
+            <div
+              v-for="location in locations"
+              :key="location.id"
+              class="location-image-wrapper"
+            >
+              <img
+                :src="location.imageUrl"
+                alt="Location"
+                class="location-image"
+              />
             </div>
           </div>
         </div>
@@ -49,7 +117,18 @@
 
 <script>
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Navbar from "@/components/Navbar.vue";
 
 export default {
@@ -62,6 +141,8 @@ export default {
       userData: null,
       editingDescription: false,
       newDescription: "",
+      blockedUsers: [],
+      locations: [],
     };
   },
   methods: {
@@ -70,10 +151,38 @@ export default {
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
-        this.userData = userSnap.data();
+        this.userData = { uid, ...userSnap.data() };
+        if (this.userData.role === "moderator") {
+          this.fetchBlockedUsers();
+          this.fetchLocations();
+        }
       } else {
         console.error("Документ не знайдено!");
       }
+    },
+    async fetchBlockedUsers() {
+      const db = getFirestore();
+      const blockedUsersQuery = query(
+        collection(db, "users"),
+        where("status", "==", "blocked")
+      );
+      const blockedUsersSnap = await getDocs(blockedUsersQuery);
+      this.blockedUsers = blockedUsersSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    },
+    async fetchLocations() {
+      const db = getFirestore();
+      const locationsQuery = query(
+        collection(db, "locations"),
+        where("status", "==", "rejected")
+      );
+      const locationsSnap = await getDocs(locationsQuery);
+      this.locations = locationsSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
     },
     formatDate(date) {
       if (!date) return "невідомо";
@@ -103,7 +212,7 @@ export default {
       const auth = getAuth();
       signOut(auth)
         .then(() => {
-          this.$router.push("/"); // Перехід на головну сторінку або іншу
+          this.$router.push("/");
         })
         .catch((error) => {
           console.error("Помилка при виході: ", error);
@@ -113,12 +222,52 @@ export default {
       const auth = getAuth();
       const db = getFirestore();
       try {
-        await deleteDoc(doc(db, "users", this.userData.uid)); // Видалення користувача з Firestore
-        await auth.currentUser.delete(); // Видалення користувача з Firebase Auth
-        this.$router.push("/"); // Перехід на головну сторінку або іншу
+        await deleteDoc(doc(db, "users", this.userData.uid));
+        await auth.currentUser.delete();
+        this.$router.push("/");
       } catch (error) {
         console.error("Помилка при видаленні акаунта: ", error);
       }
+    },
+    async unblockUser(userId) {
+      const db = getFirestore();
+      const userRef = doc(db, "users", userId);
+      await updateDoc(userRef, {
+        status: "active",
+      });
+      this.fetchBlockedUsers();
+    },
+    triggerFileInput() {
+      console.log("Клік на зображення");
+      this.$refs.fileInput.click();
+    },
+    handleFileChange(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const storage = getStorage();
+        const fileRef = ref(storage, `profile_pictures/${this.userData.uid}`);
+
+        // Завантажуємо файл у Firebase Storage
+        uploadBytes(fileRef, file).then((snapshot) => {
+          // Отримуємо URL завантаженого фото
+          getDownloadURL(snapshot.ref).then((downloadURL) => {
+            this.updateProfilePicture(downloadURL);
+          });
+        });
+      }
+    },
+
+    async updateProfilePicture(downloadURL) {
+      const db = getFirestore();
+      const userRef = doc(db, "users", this.userData.uid);
+
+      // Оновлюємо URL фото в Firestore
+      await updateDoc(userRef, {
+        profilePicture: downloadURL,
+      });
+
+      // Оновлюємо локальне значення для профілю
+      this.userData.profilePicture = downloadURL;
     },
   },
   mounted() {
@@ -127,7 +276,7 @@ export default {
       if (user) {
         this.fetchUserData(user.uid);
       } else {
-        this.$router.push("/"); // Перехід на головну сторінку, якщо користувач не авторизований
+        this.$router.push("/");
       }
     });
   },
@@ -216,7 +365,7 @@ export default {
   border-right: none;
   background-color: black;
   color: white;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 .buttons-row {
@@ -241,5 +390,138 @@ export default {
   font-size: 0.8rem;
   border: 2px solid white;
   cursor: pointer;
+}
+.blocked-users {
+  margin-top: 30px;
+  border: 2px solid white;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.blocked-title {
+  color: white;
+  font-size: 1rem;
+  text-align: center;
+  padding: 10px;
+  flex-shrink: 0;
+  background-color: black;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.blocked-list-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding: 10px 0;
+}
+
+.blocked-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px;
+  margin-bottom: 20px;
+  padding: 0px 50px;
+}
+.blocked-image {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.blocked-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.blocked-name {
+  font-size: 1rem;
+  color: white;
+  margin: 0;
+}
+.blocked-date {
+  font-size: 0.8rem;
+  color: #949494;
+  margin: 7px 0 0 0;
+}
+.locations-gallery {
+  margin-top: 30px;
+  border: 2px solid white;
+  max-height: 345px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.locations-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding: 0px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  justify-content: center;
+  padding-left: 10px;
+  padding-bottom: 10px;
+}
+
+.location-image-wrapper {
+  width: 265px;
+  height: 265px;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+  width: 300px;
+}
+
+.location-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: none; /* прибрати */
+}
+
+.profile-image-wrapper {
+  border: 2px solid white;
+  overflow: hidden; /* обрізає краї зображення + overlay */
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.profile-image-wrapper:hover .overlay {
+  opacity: 1;
+}
+.hidden-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 </style>
