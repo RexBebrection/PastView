@@ -75,11 +75,13 @@
       </div>
     </div>
   </div>
+  <Footer />
 </template>
 
 <script>
 import mapboxgl from "mapbox-gl";
 import Navbar from "@/components/Navbar.vue";
+import Footer from "@/components/Footer.vue";
 import {
   getFirestore,
   doc,
@@ -97,6 +99,7 @@ export default {
   name: "EditLocation",
   components: {
     Navbar,
+    Footer,
   },
   data() {
     return {

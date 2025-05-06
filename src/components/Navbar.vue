@@ -1,17 +1,21 @@
 <template>
   <nav>
     <div class="navbar">
-      <div class="navbar-brand">
-        <router-link to="/home" class="navbar-item">
-          <img src="../assets/Logo(big).png" alt="Logo" />
-        </router-link>
-      </div>
+      <router-link to="/home" class="navbar-item">
+        <div class="navbar-brand">
+          <img src="../assets/Logo(big).png" />
+        </div>
+      </router-link>
       <div class="navbar-menu">
         <div class="navbar-start" v-if="user">
           <router-link to="/home" class="navbar-item" id="link"
             >Головна</router-link
           >
-          <router-link v-if="user.role !== 'moderator'" to="/create-location" class="navbar-item" id="link"
+          <router-link
+            v-if="user.role !== 'moderator'"
+            to="/create-location"
+            class="navbar-item"
+            id="link"
             >Додати локацію</router-link
           >
           <router-link
@@ -30,11 +34,15 @@
           >
             Підтвердження
           </router-link>
-          <a href="mailto:someone@example.com" v-if="user.role !== 'moderator'" class="navbar-item" id="link">
+          <a
+            href="mailto:someone@example.com"
+            v-if="user.role !== 'moderator'"
+            class="navbar-item"
+            id="link"
+          >
             Написати відгук
           </a>
         </div>
-        
       </div>
       <div class="navbar-profile">
         <template v-if="user">
@@ -108,14 +116,14 @@ export default {
 <style scoped>
 .navbar {
   background-color: black;
-  padding: 5px 10% 0px 10%;
+  padding: 0px 10% 0px 10%;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .navbar-brand img {
-  max-width: 70px;
+  max-width: 50px;
   height: auto;
 }
 

@@ -35,10 +35,12 @@
       </div>
     </div>
   </div>
+  <Footer />
 </template>
 
 <script>
 import Navbar from "@/components/Navbar.vue";
+import Footer from "@/components/Footer.vue";
 import {
   getFirestore,
   collection,
@@ -52,7 +54,7 @@ import {
 
 export default {
   name: "Approve",
-  components: { Navbar },
+  components: { Navbar, Footer },
   data() {
     return {
       requests: [],
@@ -127,13 +129,13 @@ export default {
 
 <style scoped>
 .approve-container {
-  height: 100%;
+  height: 100vh;
   width: 900px;
   background-color: rgba(0, 0, 0, 0.2);
   margin: 0 auto;
   align-items: center;
   display: flex;
-  justify-content: center;
+  justify-content: start;
   flex-direction: column;
 }
 

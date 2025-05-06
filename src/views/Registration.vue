@@ -93,7 +93,7 @@
             email: this.email,
             username: this.username,
             role: "user",
-            profilePicture: "https://firebasestorage.googleapis.com/v0/b/kursova-5374b.appspot.com/o/bach%2F491004389_596021710156389_1039114513883964411_n.jpg?alt=media&token=63353374-7c0a-4060-b208-1310f3f67bce",
+            profilePicture: "https://firebasestorage.googleapis.com/v0/b/kursova-5374b.appspot.com/o/bach%2Fuser.png?alt=media&token=af753285-18bf-417d-a385-d281769201e9",
             createdAt: new Date(),
             uid: user.uid,
             role: "user",

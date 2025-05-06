@@ -110,6 +110,24 @@
             </div>
           </div>
         </div>
+        <div v-if="userData.role !== 'moderator'" class="profile-loc">
+          <div class="profile-locations">
+            <p class="blocked-title">Мої світлини</p>
+            <div class="locations-scroll">
+              <div
+                v-for="location in userLocations"
+                :key="location.id"
+                class="location-image-wrapper"
+              >
+                <img
+                  :src="location.imageUrl"
+                  alt="Location"
+                  class="location-image"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -127,14 +145,17 @@ import {
   query,
   where,
   getDocs,
+  collectionGroup,
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Navbar from "@/components/Navbar.vue";
+import Footer from "@/components/Footer.vue";
 
 export default {
   name: "ProfileView",
   components: {
     Navbar,
+    Footer,
   },
   data() {
     return {
@@ -143,6 +164,8 @@ export default {
       newDescription: "",
       blockedUsers: [],
       locations: [],
+      userLocations: [],
+      userComments: [],
     };
   },
   methods: {
@@ -152,6 +175,8 @@ export default {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         this.userData = { uid, ...userSnap.data() };
+        this.userLocations = await this.fetchUserLocations(uid);
+
         if (this.userData.role === "moderator") {
           this.fetchBlockedUsers();
           this.fetchLocations();
@@ -268,6 +293,16 @@ export default {
 
       // Оновлюємо локальне значення для профілю
       this.userData.profilePicture = downloadURL;
+    },
+    async fetchUserLocations(uid) {
+      const db = getFirestore();
+      const locationsQuery = query(
+        collection(db, "locations"),
+        where("userUid", "==", uid)
+      );
+
+      const locationsSnap = await getDocs(locationsQuery);
+      return locationsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     },
   },
   mounted() {
@@ -524,4 +559,31 @@ export default {
   height: 1px;
   opacity: 0;
 }
+
+.profile-loc {
+  margin-top: 30px;
+  border: 2px solid white;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-locations {
+  max-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+
+.locations-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  padding: 0px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  justify-content: center;
+  padding-left: 20px;
+  
+  padding-bottom: 10px;
+}
 </style>
+
