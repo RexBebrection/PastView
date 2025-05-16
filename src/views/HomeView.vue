@@ -70,6 +70,7 @@
         <div class="location-details-right">
           <img
             :src="selectedLocation.locationImage"
+            @click="openFullscreen()"
             alt="Large Location"
             class="large-photo"
           />
@@ -83,6 +84,24 @@
       </div>
     </div>
   </div>
+  <div
+    v-if="isFullscreenVisible"
+    class="fullscreen-overlay"
+    @click.self="closeFullscreen"
+  >
+    <div class="fullscreen-content">
+      <p class="fullscreen-street">
+        {{ selectedLocation.street }} Copyright: @{{ selectedLocation.username }}
+      </p>
+      <img
+        :src="selectedLocation.locationImage"
+        alt="Location"
+        class="fullscreen-image"
+      />
+      <button class="close-btn" @click="closeFullscreen">✕</button>
+    </div>
+  </div>
+
   <Footer />
 </template>
 
@@ -105,7 +124,7 @@ import mapboxgl from "mapbox-gl";
 export default {
   components: {
     Navbar,
-    Footer
+    Footer,
   },
   data() {
     return {
@@ -119,6 +138,7 @@ export default {
         username: "",
         profileImage: "",
       },
+      isFullscreenVisible: false,
     };
   },
   computed: {
@@ -287,6 +307,12 @@ export default {
         const next = this.locations[this.currentIndex + 1];
         this.focusOnLocation(next);
       }
+    },
+    openFullscreen() {
+      this.isFullscreenVisible = true;
+    },
+    closeFullscreen() {
+      this.isFullscreenVisible = false;
     },
   },
   mounted() {
@@ -610,5 +636,62 @@ export default {
   font-size: 0.8rem;
   color: white;
   margin: 0;
+}
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+.fullscreen-content {
+  position: relative;
+  text-align: center;
+  color: white;
+}
+
+.fullscreen-image {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  margin-top: 20px;
+}
+
+.fullscreen-street {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.fullscreen-username {
+  margin-top: 8px;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: -80px;
+  font-size: 1.5rem;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>
