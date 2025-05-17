@@ -83,6 +83,7 @@
       </div>
     </div>
   </div>
+
   <Footer />
 </template>
 
@@ -105,7 +106,7 @@ import mapboxgl from "mapbox-gl";
 export default {
   components: {
     Navbar,
-    Footer
+    Footer,
   },
   data() {
     return {
@@ -210,9 +211,11 @@ export default {
         const marker = new mapboxgl.Marker(el)
           .setLngLat(location.coordinates)
           .setPopup(
-            new mapboxgl.Popup().setHTML(`
+            new mapboxgl.Popup({closeButton: false}).setHTML(`
+            
         <img class="photo-preview" src="${location.locationImage}" alt="Location Photo" ">
-        <p class="text-preview" style="margin-top: 4px;">${location.street}</p>
+        <p class="text-preview" style="margin-top: 4px; color: #fff">${location.street}</p>
+
       `)
           )
           .addTo(this.map);
@@ -610,5 +613,11 @@ export default {
   font-size: 0.8rem;
   color: white;
   margin: 0;
+}
+</style>
+
+<style scoped>
+::v-deep .mapboxgl-popup-content {
+  background-color: black !important;
 }
 </style>
